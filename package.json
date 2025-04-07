@@ -1,0 +1,38 @@
+{
+	"name": "tibber-influxdb-bridge",
+	"version": "1.0.0",
+	"description": "Application to fetch data from Tibber API and store in InfluxDB",
+	"repository": {
+		"url": "git+https://github.com/tkhduracell/tibber-influxdb-bridge.git"
+	},
+	"main": "dist/app.js",
+	"types": "dist/app.d.ts",
+	"dependencies": {
+		"@influxdata/influxdb-client": "^1.35.0",
+		"tibber-api": "^5.3.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@tsconfig/node22": "^22.0.1",
+		"@types/node": "^22.14.0",
+		"dotenv": "^16.4.7",
+		"tsx": "^4.19.3",
+		"typescript": "^5.8.3"
+	},
+	"scripts": {
+		"dev": "tsx --env-file=.env --watch src/app.ts",
+		"start": "tsx src/app.ts",
+		"build": "tsc -p tsconfig.json",
+		"lint": "biome lint --write",
+		"format": "biome format --write",
+		"check": "biome check --write",
+		"test": "tsx --env-file=.env --test '**/*.test.{js,ts}' '**/*.spec.{js,ts}'",
+		"typecheck": "tsc --noEmit"
+	},
+	"keywords": ["tibber", "influxdb", "iot", "power", "energy"],
+	"author": "Filip Lindqvist",
+	"license": "MIT",
+	"engines": {
+		"node": ">=22.0.0"
+	}
+}

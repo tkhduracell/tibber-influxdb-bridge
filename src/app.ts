@@ -1,0 +1,103 @@
+import TibberDataFetcher from "./tibber-data-fetcher";
+
+// Configuration from environment variables
+interface Config {
+	accessToken: string;
+	homeId: string;
+	queryUrl?: string;
+	feedTimeout?: number;
+	feedConnectionTimeout?: number;
+	influxUrl: string;
+	influxToken: string;
+	influxOrg: string;
+	influxBucket: string;
+	influxMeasurement: string;
+}
+
+const config: Config = {
+	accessToken: process.env.TIBBER_ACCESS_TOKEN || "",
+	homeId: process.env.TIBBER_HOME_ID || "",
+	queryUrl: process.env.TIBBER_QUERY_URL,
+	feedTimeout: Number.parseInt(process.env.TIBBER_FEED_TIMEOUT || "60"),
+	feedConnectionTimeout: Number.parseInt(
+		process.env.TIBBER_CONNECTION_TIMEOUT || "30",
+	),
+
+	// InfluxDB configuration
+	influxUrl: process.env.INFLUXDB_URL || "http://localhost:8086",
+	influxToken: process.env.INFLUXDB_TOKEN || "",
+	influxOrg: process.env.INFLUXDB_ORG || "my-org",
+	influxBucket: process.env.INFLUXDB_BUCKET || "tibber",
+	influxMeasurement: process.env.INFLUXDB_MEASUREMENT || "live_data",
+};
+
+// Validate required configuration
+if (!config.accessToken) {
+	console.error("Error: TIBBER_ACCESS_TOKEN environment variable must be set");
+	process.exit(1);
+}
+
+if (!config.homeId) {
+	console.error("Error: TIBBER_HOME_ID environment variable must be set");
+	process.exit(1);
+}
+
+// Validate InfluxDB configuration
+if (!config.influxToken) {
+	console.error("Error: INFLUXDB_TOKEN environment variable must be set");
+	process.exit(1);
+}
+
+// Clean URL (remove trailing slash if present)
+if (config.influxUrl.endsWith("/")) {
+	config.influxUrl = config.influxUrl.slice(0, -1);
+	console.log(
+		`Warning: Removed trailing slash from InfluxDB URL: ${config.influxUrl}`,
+	);
+}
+
+// Initialize and start the data fetcher
+async function start(): Promise<void> {
+	console.log("Starting Tibber data fetcher...");
+
+	try {
+		const dataFetcher = await new TibberDataFetcher(config).init();
+
+		// Set up event listeners
+		dataFetcher.on("error", (error: Error) => {
+			console.error("TibberDataFetcher error:", error);
+		});
+
+		dataFetcher.on("status", (status: number) => {
+			// Status is already logged inside the fetcher
+		});
+
+		dataFetcher.on("data-processed", (data: any) => {
+			// This could be used for additional processing if needed
+		});
+
+		// Connect to Tibber
+		await dataFetcher.connect();
+
+		// Setup graceful shutdown
+		process.on("SIGTERM", async () => {
+			console.log("SIGTERM received. Shutting down...");
+			await dataFetcher.close();
+			process.exit(0);
+		});
+
+		process.on("SIGINT", async () => {
+			console.log("SIGINT received. Shutting down...");
+			await dataFetcher.close();
+			process.exit(0);
+		});
+
+		console.log("Tibber data fetcher started successfully");
+	} catch (error) {
+		console.error("Failed to start Tibber data fetcher:", error);
+		process.exit(1);
+	}
+}
+
+// Start the application
+start();

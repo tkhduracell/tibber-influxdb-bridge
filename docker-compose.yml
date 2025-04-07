@@ -1,0 +1,7 @@
+services:
+  tibber-fetcher:
+    build: .
+    container_name: tibber-fetcher
+    restart: unless-stopped
+    env_file:
+      - .env
