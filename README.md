@@ -40,11 +40,10 @@ Configure the application using environment variables in the `docker-compose.yml
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/tibber-influxdb-fetcher.git
-   cd tibber-influxdb-fetcher
+   curl https://raw.githubusercontent.com/tkhduracell/tibber-influxdb-bridge/refs/heads/main/docker-compose.yml > docker-compose.yml
    ```
 
-2. Update the environment variables in `.env`:
+2. Create environment variables in `.env`:
    ```
    TIBBER_ACCESS_TOKEN=your-tibber-token
    TIBBER_HOME_ID=your-home-id
@@ -67,7 +66,7 @@ Configure the application using environment variables in the `docker-compose.yml
 The application will automatically connect to the Tibber API and begin streaming real-time data to your InfluxDB instance. You can monitor the logs with:
 
 ```bash
-docker logs -f tibber-fetcher
+docker logs -f tibber-influx-bridge
 ```
 
 ### InfluxDB Dashboard

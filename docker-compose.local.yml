@@ -1,6 +1,6 @@
 services:
-  tibber-fetcher:
-    image: tibber-influx-bridge:latest
+  tibber-influx-bridge:
+    build: .
     container_name: tibber-influx-bridge
     restart: unless-stopped
     env_file:
