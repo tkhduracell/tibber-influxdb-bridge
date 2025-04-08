@@ -31,16 +31,16 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Create a non-root user and group
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nodejs
+RUN addgroup --system --gid 1001 tibber-influxdb-bridge && \
+    adduser --system --uid 1001 tibber-influxdb-bridge
 
 # Copy necessary files from the builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=builder --chown=tibber-influxdb-bridge:tibber-influxdb-bridge /app/package.json ./package.json
+COPY --from=builder --chown=tibber-influxdb-bridge:tibber-influxdb-bridge /app/node_modules ./node_modules
+COPY --from=builder --chown=tibber-influxdb-bridge:tibber-influxdb-bridge /app/dist ./dist
 
 # Switch to the non-root user
-USER nodejs
+USER tibber-influxdb-bridge
 
 # Set environment variable for production
 ENV NODE_ENV=production
