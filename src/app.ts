@@ -1,3 +1,4 @@
+import logger from "./logger";
 import TibberDataFetcher from "./tibber-data-fetcher";
 
 // Configuration from environment variables
@@ -33,39 +34,39 @@ const config: Config = {
 
 // Validate required configuration
 if (!config.accessToken) {
-	console.error("Error: TIBBER_ACCESS_TOKEN environment variable must be set");
+	logger.error("Error: TIBBER_ACCESS_TOKEN environment variable must be set");
 	process.exit(1);
 }
 
 if (!config.homeId) {
-	console.error("Error: TIBBER_HOME_ID environment variable must be set");
+	logger.error("Error: TIBBER_HOME_ID environment variable must be set");
 	process.exit(1);
 }
 
 // Validate InfluxDB configuration
 if (!config.influxToken) {
-	console.error("Error: INFLUXDB_TOKEN environment variable must be set");
+	logger.error("Error: INFLUXDB_TOKEN environment variable must be set");
 	process.exit(1);
 }
 
 // Clean URL (remove trailing slash if present)
 if (config.influxUrl.endsWith("/")) {
 	config.influxUrl = config.influxUrl.slice(0, -1);
-	console.log(
+	logger.info(
 		`Warning: Removed trailing slash from InfluxDB URL: ${config.influxUrl}`,
 	);
 }
 
 // Initialize and start the data fetcher
 async function start(): Promise<void> {
-	console.log("Starting Tibber data fetcher...");
+	logger.info("Starting Tibber data fetcher...");
 
 	try {
 		const dataFetcher = await new TibberDataFetcher(config).init();
 
 		// Set up event listeners
 		dataFetcher.on("error", (error: Error) => {
-			console.error("TibberDataFetcher error:", error);
+			logger.error("TibberDataFetcher error:", error);
 		});
 
 		dataFetcher.on("status", (status: number) => {
@@ -81,20 +82,20 @@ async function start(): Promise<void> {
 
 		// Setup graceful shutdown
 		process.on("SIGTERM", async () => {
-			console.log("SIGTERM received. Shutting down...");
+			logger.info("SIGTERM received. Shutting down...");
 			await dataFetcher.close();
 			process.exit(0);
 		});
 
 		process.on("SIGINT", async () => {
-			console.log("SIGINT received. Shutting down...");
+			logger.info("SIGINT received. Shutting down...");
 			await dataFetcher.close();
 			process.exit(0);
 		});
 
-		console.log("Tibber data fetcher started successfully");
+		logger.info("Tibber data fetcher started successfully");
 	} catch (error) {
-		console.error("Failed to start Tibber data fetcher:", error);
+		logger.error("Failed to start Tibber data fetcher:", error);
 		process.exit(1);
 	}
 }
