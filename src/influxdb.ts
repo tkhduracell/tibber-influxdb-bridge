@@ -41,10 +41,10 @@ class InfluxDB {
 				minRetryDelay: 1000,
 				flushInterval: 10000,
 				writeSuccess(lines) {
-					logger.info("Write successful!", { lines });
+					logger.debug("Write successful!", { lines });
 				},
 				writeFailed(error, lines, attempt, expires) {
-					logger.error("Write failed:", error, { lines, attempt, expires });
+					logger.warn("Write failed:", error, { lines, attempt, expires });
 				},
 			},
 		);
