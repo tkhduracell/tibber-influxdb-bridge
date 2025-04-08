@@ -9,6 +9,7 @@
 	"types": "dist/app.d.ts",
 	"dependencies": {
 		"@influxdata/influxdb-client": "^1.35.0",
+		"pino": "^9.6.0",
 		"tibber-api": "^5.3.1"
 	},
 	"devDependencies": {
