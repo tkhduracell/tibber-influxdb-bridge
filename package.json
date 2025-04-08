@@ -32,13 +32,7 @@
 		"typecheck": "tsc --noEmit",
 		"types": "tsc --noEmit"
 	},
-	"keywords": [
-		"tibber",
-		"influxdb",
-		"iot",
-		"power",
-		"energy"
-	],
+	"keywords": ["tibber", "influxdb", "iot", "power", "energy"],
 	"author": "Filip Lindqvist",
 	"license": "MIT",
 	"engines": {

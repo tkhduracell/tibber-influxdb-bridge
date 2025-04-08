@@ -85,7 +85,6 @@ class TibberDataFetcher extends EventEmitter {
 		// Setup event listeners
 		this.setupEventListeners();
 
-		logger.info("TibberDataFetcher initialized");
 		return this;
 	}
 
@@ -101,32 +100,32 @@ class TibberDataFetcher extends EventEmitter {
 		// Connection status listeners
 		this.tibberFeed.on("connecting", (data: any) => {
 			this.setStatus(this.statusEnum.connecting);
-			logger.info("Connecting", data);
+			logger.info({ data }, "Connecting");
 		});
 
 		this.tibberFeed.on("connection_timeout", (data: any) => {
 			this.setStatus(this.statusEnum.waiting);
-			logger.warn("Connection Timeout", data);
+			logger.warn({ data }, "Connection Timeout");
 		});
 
 		this.tibberFeed.on("connected", (data: any) => {
 			this.setStatus(this.statusEnum.connected);
-			logger.debug("Connected", data);
+			logger.debug({ data }, "Connected");
 		});
 
 		this.tibberFeed.on("connection_ack", (data: any) => {
 			this.setStatus(this.statusEnum.connected);
-			logger.debug("Connection acknowledged", data);
+			logger.debug({ data }, "Connection acknowledged");
 		});
 
 		this.tibberFeed.on("heartbeat_timeout", (data: any) => {
 			this.setStatus(this.statusEnum.waiting);
-			logger.debug("Heartbeat Timeout", data);
+			logger.debug({ data }, "Heartbeat Timeout");
 		});
 
 		this.tibberFeed.on("heartbeat_reconnect", (data: any) => {
 			this.setStatus(this.statusEnum.connecting);
-			logger.debug("Heartbeat Reconnect", data);
+			logger.debug({ data }, "Heartbeat Reconnect");
 		});
 
 		this.tibberFeed.on("disconnected", (data: any) => {
@@ -136,12 +135,12 @@ class TibberDataFetcher extends EventEmitter {
 			) {
 				this.setStatus(this.statusEnum.disconnected);
 			}
-			logger.info("Disconnected", data);
+			logger.info({ data }, "Disconnected");
 		});
 
 		// Error handling
 		this.tibberFeed.on("error", (error: any) => {
-			logger.error("Tibber Feed Error:", error);
+			logger.error(error, "Tibber Feed Error");
 			this.emit("error", error);
 		});
 	}
@@ -175,7 +174,7 @@ class TibberDataFetcher extends EventEmitter {
 	private async handleData(data: TibberData): Promise<void> {
 		try {
 			// Process the data
-			logger.debug("Received data from Tibber", { ts: data.timestamp });
+			logger.debug({ ts: data.timestamp }, "Received data from Tibber");
 
 			// Write to InfluxDB
 			// biome-ignore lint/complexity/noForEach: Legacy code
@@ -201,8 +200,7 @@ class TibberDataFetcher extends EventEmitter {
 
 			this.emit("data-processed", data);
 		} catch (error) {
-			logger.error("Error handling data:", error);
-			this.emit("error", error);
+			logger.error(error, "Error handling data:");
 		}
 	}
 
@@ -225,7 +223,6 @@ class TibberDataFetcher extends EventEmitter {
 		}
 
 		this.setStatus(this.statusEnum.disconnected);
-		logger.debug("TibberDataFetcher closed");
 	}
 }
 
