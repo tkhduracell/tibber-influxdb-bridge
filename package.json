@@ -10,15 +10,14 @@
 	"dependencies": {
 		"@influxdata/influxdb-client": "^1.35.0",
 		"pino": "^9.6.0",
+		"pino-pretty": "^13.0.0",
 		"tibber-api": "^5.3.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@tsconfig/node22": "^22.0.1",
 		"@types/node": "^22.14.0",
-		"@types/pino": "^7.0.5",
 		"dotenv": "^16.4.7",
-		"pino-pretty": "^13.0.0",
 		"tsx": "^4.19.3",
 		"typescript": "^5.8.3"
 	},
@@ -30,9 +29,16 @@
 		"format": "biome format --write",
 		"check": "biome check --write",
 		"test": "tsx --env-file=.env --test '**/*.test.{js,ts}' '**/*.spec.{js,ts}'",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"types": "tsc --noEmit"
 	},
-	"keywords": ["tibber", "influxdb", "iot", "power", "energy"],
+	"keywords": [
+		"tibber",
+		"influxdb",
+		"iot",
+		"power",
+		"energy"
+	],
 	"author": "Filip Lindqvist",
 	"license": "MIT",
 	"engines": {
