@@ -1,25 +1,49 @@
-FROM node:22-alpine
+# ---- Builder Stage ----
+FROM node:22-alpine AS builder
 
-# Create app directory
+# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json pnpm-lock.yaml tsconfig.json ./
+# Enable Corepack to use pnpm
+RUN corepack enable
 
-# Install dependencies and build tools
-RUN npm install -g pnpm && \
-    pnpm i && \
-    # Install global tsx for production
-    npm install -g tsx
+# Copy package manager files and tsconfig
+# Copy pnpm-workspace.yaml as it's present in the project
+COPY package.json pnpm-lock.yaml tsconfig.json pnpm-workspace.yaml ./
 
-# Copy source files
+# Install all dependencies (including devDependencies needed for build)
+# Use --frozen-lockfile for CI/CD reliability
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
 COPY src/ ./src/
 
 # Build the TypeScript code
-RUN pnpm build
+RUN pnpm run build
 
-# Set environment variables
+# Remove development dependencies after build
+RUN pnpm prune --prod
+
+# ---- Final Stage ----
+FROM node:22-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Create a non-root user and group
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nodejs
+
+# Copy necessary files from the builder stage
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
+
+# Switch to the non-root user
+USER nodejs
+
+# Set environment variable for production
 ENV NODE_ENV=production
 
-# Run the application
-CMD ["pnpm", "start"]
+# Command to run the application using the built JS file
+CMD [ "node", "dist/app.js" ]
