@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 // mycoder.config.js
 export default {
 	// GitHub integration
@@ -27,7 +29,10 @@ export default {
 
 	// Custom settings
 	// customPrompt can be a string or an array of strings for multiple lines
-	customPrompt: "",
+	customPrompt: `
+        Please follow the instructions in the CAUDE.md file:
+        ${readFileSync("../CAUDE.md", "utf-8")}
+    `,
 	// Example of multiple line custom prompts:
 	// customPrompt: [
 	//   'Custom instruction line 1',
