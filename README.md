@@ -36,6 +36,7 @@ Configure the application using environment variables in the `docker-compose.yml
 - `INFLUXDB_BUCKET`: InfluxDB bucket to store data (default: tibber)
 - `INFLUXDB_MEASUREMENT`: InfluxDB mesurement to store data (default: live_data)
 
+\n### Logging Configuration\n\n- `LOG_LEVEL`: Sets the logging level (e.g., 'debug', 'info', 'warn', 'error'). Defaults to 'debug' in development and 'info' in production.\n- `LOG_FORMAT`: Sets the logging format. Use 'json' for structured JSON logs or 'pretty' for human-readable, colorized logs. Defaults to 'pretty' in development and 'json' in production.
 ## Installation
 
 1. Clone this repository:
