@@ -36,6 +36,11 @@ Configure the application using environment variables in the `docker-compose.yml
 - `INFLUXDB_BUCKET`: InfluxDB bucket to store data (default: tibber)
 - `INFLUXDB_MEASUREMENT`: InfluxDB mesurement to store data (default: live_data)
 
+### Logging Configuration
+
+- `LOG_LEVEL`: Sets the logging level (e.g., 'debug', 'info', 'warn', 'error'). Defaults to 'debug' in development and 'info' in production.
+- `LOG_FORMAT`: Sets the logging format. Use 'json' for structured JSON logs, 'pretty' for human-readable colorized logs, or 'plain' for human-readable logs without color. Defaults to 'pretty' in development and 'json' in production.
+
 ## Installation
 
 1. Clone this repository:
@@ -48,7 +53,7 @@ Configure the application using environment variables in the `docker-compose.yml
    TIBBER_ACCESS_TOKEN=your-tibber-token
    TIBBER_HOME_ID=your-home-id
    TIBBER_QUERY_URL=https://api.tibber.com/v1-beta/gql
-   
+
    INFLUXDB_URL=http://influx-url:8086/
    INFLUXDB_TOKEN=your-token
    INFLUXDB_ORG=your-org
