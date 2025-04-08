@@ -10,13 +10,13 @@ const usePlainPrint = logFormat === "plain";
 
 const transport = (() => {
 	if (usePrettyPrint || usePlainPrint) {
-		return pino.transport({
+		return {
 			target: "pino-pretty",
 			options: {
 				colorize: usePrettyPrint,
 				ignore: "pid,hostname,node",
 			},
-		});
+		};
 	}
 	return undefined;
 })();
