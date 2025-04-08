@@ -10,8 +10,8 @@ The runtime is Node 22, use native tools when possible.
 ## Build & Test Commands
 - Run all tests: `pnpm test`
 - Run dev mode with auto reload: `pnpm dev` (never use `start`)
-- Format & lint code: `pnpm run check` (writes safe autofixes)
-- Run: `docker-compose up --build`
+- Format & lint code: `pnpm check` (writes safe autofixes)
+- Run: `docker-compose -f docker-compose.local.yml up --build`
 
 ## Code Style Guidelines
 - **Formatting**: Follow BiomeJS recommended rules
@@ -23,3 +23,4 @@ The runtime is Node 22, use native tools when possible.
 
 ## Tip
 - If you need to `curl` use `env curl`!
+- After ANY change run `pnpm check`
