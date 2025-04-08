@@ -66,7 +66,7 @@ async function start(): Promise<void> {
 
 		// Set up event listeners
 		dataFetcher.on("error", (error: Error) => {
-			logger.error("TibberDataFetcher error:", error);
+			logger.error(error, "TibberDataFetcher error");
 		});
 
 		dataFetcher.on("status", (status: number) => {
@@ -95,7 +95,7 @@ async function start(): Promise<void> {
 
 		logger.info("Tibber data fetcher started successfully");
 	} catch (error) {
-		logger.error("Failed to start Tibber data fetcher:", error);
+		logger.error(error, "Failed to start Tibber data fetcher");
 		process.exit(1);
 	}
 }

@@ -40,19 +40,23 @@ class InfluxDB {
 				maxRetries: 3,
 				minRetryDelay: 1000,
 				flushInterval: 10000,
+				randomRetry: true,
 				writeSuccess(lines) {
 					logger.debug("Write successful!", { lines });
 				},
 				writeFailed(error, lines, attempt, expires) {
-					logger.warn("Write failed:", error, { lines, attempt, expires });
+					logger.warn({ lines, attempt, expires, error }, "Write failed");
 				},
 			},
 		);
 
-		logger.info("InfluxDB initialized with config:", {
-			...this.config,
-			token: this.config.token ? "****" : this.config.token,
-		});
+		logger.info(
+			{
+				...this.config,
+				token: this.config.token ? "****" : this.config.token,
+			},
+			"InfluxDB initialized with config",
+		);
 	}
 
 	async connect(): Promise<boolean> {
@@ -68,14 +72,14 @@ class InfluxDB {
 			}
 			const errorText = await response.text();
 			logger.error(
+				{ errorText },
 				`InfluxDB health check failed: ${response.status} ${response.statusText}`,
 			);
-			logger.error(errorText);
 			throw new Error(
 				`InfluxDB health check failed with status ${response.status}`,
 			);
 		} catch (error) {
-			logger.error("Failed to connect to InfluxDB:", error);
+			logger.error(error, "Failed to connect to InfluxDB:");
 			throw error;
 		}
 	}
@@ -126,7 +130,7 @@ class InfluxDB {
 			this.writeApi.writePoint(point);
 			return true;
 		} catch (error) {
-			logger.error("Failed to write data to InfluxDB:", error);
+			logger.error(error, "Failed to write data to InfluxDB");
 			return false;
 		}
 	}
@@ -139,7 +143,7 @@ class InfluxDB {
 			logger.debug("InfluxDB connection resources released");
 			return true;
 		} catch (error) {
-			logger.error("Error closing InfluxDB connection:", error);
+			logger.error(error, "Error closing InfluxDB connection");
 			return false;
 		}
 	}
