@@ -1,4 +1,5 @@
 import { InfluxDB as InfluxDBClient, Point } from "@influxdata/influxdb-client";
+import logger from './logger';
 
 interface InfluxDBConfig {
 	url: string;
@@ -40,15 +41,15 @@ class InfluxDB {
 				minRetryDelay: 1000,
 				flushInterval: 10000,
 				writeSuccess(lines) {
-					console.log("Write successful!", { lines });
+					logger.info("Write successful!", { lines });
 				},
 				writeFailed(error, lines, attempt, expires) {
-					console.error("Write failed:", error, { lines, attempt, expires });
+					logger.error("Write failed:", error, { lines, attempt, expires });
 				},
 			},
 		);
 
-		console.log("InfluxDB initialized with config:", {
+		logger.info("InfluxDB initialized with config:", {
 			...this.config,
 			token: this.config.token ? "****" : this.config.token,
 		});
@@ -56,25 +57,25 @@ class InfluxDB {
 
 	async connect(): Promise<boolean> {
 		try {
-			console.log("Testing connection to InfluxDB...");
+			logger.info("Testing connection to InfluxDB...");
 
 			// Simple health check
 			const response = await fetch(`${this.config.url}/health`);
 
 			if (response.ok) {
-				console.log("Successfully connected to InfluxDB");
+				logger.info("Successfully connected to InfluxDB");
 				return true;
 			}
 			const errorText = await response.text();
-			console.error(
+			logger.error(
 				`InfluxDB health check failed: ${response.status} ${response.statusText}`,
 			);
-			console.error(errorText);
+			logger.error(errorText);
 			throw new Error(
 				`InfluxDB health check failed with status ${response.status}`,
 			);
 		} catch (error) {
-			console.error("Failed to connect to InfluxDB:", error);
+			logger.error("Failed to connect to InfluxDB:", error);
 			throw error;
 		}
 	}
@@ -125,7 +126,7 @@ class InfluxDB {
 			this.writeApi.writePoint(point);
 			return true;
 		} catch (error) {
-			console.error("Failed to write data to InfluxDB:", error);
+			logger.error("Failed to write data to InfluxDB:", error);
 			return false;
 		}
 	}
@@ -135,10 +136,10 @@ class InfluxDB {
 			// Close the write API only (client doesn't have a close method)
 			await this.writeApi.close();
 
-			console.log("InfluxDB connection resources released");
+			logger.info("InfluxDB connection resources released");
 			return true;
 		} catch (error) {
-			console.error("Error closing InfluxDB connection:", error);
+			logger.error("Error closing InfluxDB connection:", error);
 			return false;
 		}
 	}
