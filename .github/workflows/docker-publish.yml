@@ -39,6 +39,7 @@ jobs:
         with:
           images: tkhduracell/tibber-influxdb-bridge # Replace with your Docker Hub username/repo
           tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
             type=schedule
             type=ref,event=branch
             type=ref,event=pr
