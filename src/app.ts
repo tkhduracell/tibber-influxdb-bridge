@@ -1,5 +1,5 @@
+import logger from "./logger";
 import TibberDataFetcher from "./tibber-data-fetcher";
-import logger from './logger';
 
 // Configuration from environment variables
 interface Config {
