@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x, lts/*]
+        node-version: [18.x, 20.x, lts/*]
         # See supported Node.js release schedule at 
         # https://nodejs.org/en/about/releases/
         # https://nodered.org/docs/faq/node-versions
@@ -36,7 +36,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
     
-    - run: pnpm install --prefer-offline --no-fund --no-audit
+    - run: pnpm install --prefer-offline
     
     - run: pnpm typecheck
     
