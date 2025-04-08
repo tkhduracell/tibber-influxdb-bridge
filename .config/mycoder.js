@@ -30,8 +30,9 @@ export default {
 	// Custom settings
 	// customPrompt can be a string or an array of strings for multiple lines
 	customPrompt: `
-        Please follow the instructions in the CAUDE.md file:
-        ${readFileSync("../CAUDE.md", "utf-8")}
+        Please follow the instructions in the CLAUDE.md file:
+        ${readFileSync("CLAUDE.md", "utf-8")}
+        (Also make sure to keep the CLAUDE.md and README.md file up to date)
     `,
 	// Example of multiple line custom prompts:
 	// customPrompt: [
