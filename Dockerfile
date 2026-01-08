@@ -1,5 +1,5 @@
 # ---- Builder Stage ----
-FROM node:22-alpine AS builder
+FROM node:25-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -25,7 +25,7 @@ RUN pnpm run build
 RUN pnpm prune --prod
 
 # ---- Final Stage ----
-FROM node:22-alpine
+FROM node:25-alpine
 
 # Set working directory
 WORKDIR /app
