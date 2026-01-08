@@ -53,10 +53,9 @@ class TibberDataFetcher extends EventEmitter {
 	async init(): Promise<TibberDataFetcher> {
 		// Initialize InfluxDB
 		this.influxDb = new InfluxDB({
-			url: this.config.influxUrl,
+			host: this.config.influxUrl,
 			token: this.config.influxToken,
-			org: this.config.influxOrg,
-			bucket: this.config.influxBucket,
+			database: this.config.influxBucket,
 		});
 
 		await this.influxDb.connect();

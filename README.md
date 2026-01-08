@@ -5,7 +5,7 @@ A Node.js application that fetches real-time data from the Tibber API and stores
 ## Features
 
 - Real-time energy consumption data from Tibber
-- Automatic data storage in InfluxDB time-series database
+- Automatic data storage in InfluxDB v3 time-series database
 - Dockerized for easy deployment
 - Configurable via environment variables
 - Automatic reconnection handling
@@ -13,6 +13,7 @@ A Node.js application that fetches real-time data from the Tibber API and stores
 ## Requirements
 
 - Docker and Docker Compose
+- InfluxDB v3 (Cloud or OSS)
 - Tibber API access token
 - Tibber Home ID
 
@@ -32,8 +33,8 @@ Configure the application using environment variables in the `docker-compose.yml
 
 - `INFLUXDB_URL`: InfluxDB server URL (default: http://influxdb:8086)
 - `INFLUXDB_TOKEN`: InfluxDB authentication token (required)
-- `INFLUXDB_ORG`: InfluxDB organization (default: my-org)
-- `INFLUXDB_BUCKET`: InfluxDB bucket to store data (default: tibber)
+- `INFLUXDB_ORG`: InfluxDB organization (deprecated - not used with InfluxDB v3)
+- `INFLUXDB_BUCKET`: InfluxDB bucket/database to store data (default: tibber)
 - `INFLUXDB_MEASUREMENT`: InfluxDB mesurement to store data (default: live_data)
 
 ### Logging Configuration

@@ -1,11 +1,10 @@
-import { InfluxDB as InfluxDBClient, Point } from "@influxdata/influxdb-client";
+import { InfluxDBClient, Point } from "@influxdata/influxdb3-client";
 import logger from "./logger";
 
 interface InfluxDBConfig {
-	url: string;
+	host: string;
 	token: string;
-	org: string;
-	bucket: string;
+	database: string;
 }
 
 interface DataPoint {
@@ -16,43 +15,25 @@ interface DataPoint {
 class InfluxDB {
 	private config: InfluxDBConfig;
 	private client: InfluxDBClient;
-	private writeApi: any;
 
 	constructor(config: InfluxDBConfig) {
 		this.config = {
 			...config,
 			// Remove trailing slash if present
-			url: config.url.endsWith("/") ? config.url.slice(0, -1) : config.url,
+			host: config.host.endsWith("/") ? config.host.slice(0, -1) : config.host,
 		};
 
 		// Create InfluxDB client
 		this.client = new InfluxDBClient({
-			url: this.config.url,
+			host: this.config.host,
 			token: this.config.token,
+			database: this.config.database,
 		});
-
-		// Create write API
-		this.writeApi = this.client.getWriteApi(
-			this.config.org,
-			this.config.bucket,
-			"ms", // millisecond precision
-			{
-				maxRetries: 3,
-				minRetryDelay: 1000,
-				flushInterval: 10000,
-				randomRetry: true,
-				writeSuccess(lines) {
-					logger.debug("Write successful!", { lines });
-				},
-				writeFailed(error, lines, attempt, expires) {
-					logger.warn({ lines, attempt, expires, error }, "Write failed");
-				},
-			},
-		);
 
 		logger.info(
 			{
-				...this.config,
+				host: this.config.host,
+				database: this.config.database,
 				token: this.config.token ? "****" : this.config.token,
 			},
 			"InfluxDB initialized with config",
@@ -64,7 +45,7 @@ class InfluxDB {
 			logger.debug("Testing connection to InfluxDB...");
 
 			// Simple health check
-			const response = await fetch(`${this.config.url}/health`);
+			const response = await fetch(`${this.config.host}/health`);
 
 			if (response.ok) {
 				logger.debug("Successfully connected to InfluxDB");
@@ -87,7 +68,7 @@ class InfluxDB {
 	async writePoint(measurement: string, data: DataPoint): Promise<boolean> {
 		try {
 			// Create a point using the official client
-			const point = new Point(measurement);
+			const point = Point.measurement(measurement);
 
 			// Track processed keys and extract timestamp
 			const timestamp = data.timestamp;
@@ -97,7 +78,7 @@ class InfluxDB {
 				if (key === "timestamp") continue;
 
 				if (typeof value === "string" && value.length < 64) {
-					point.tag(key, value);
+					point.setTag(key, value);
 				}
 			}
 
@@ -108,39 +89,40 @@ class InfluxDB {
 				}
 
 				if (typeof value === "number") {
-					point.floatField(key, value);
+					point.setFloatField(key, value);
 				} else if (typeof value === "boolean") {
-					point.booleanField(key, value);
+					point.setBooleanField(key, value);
 				} else if (typeof value === "string" && value.length >= 64) {
 					// Only add long strings as fields, short strings are tags
-					point.stringField(key, value);
+					point.setStringField(key, value);
 				} else if (value instanceof Date) {
-					point.stringField(key, value.toISOString());
+					point.setStringField(key, value.toISOString());
 				}
 			}
 
 			// Set timestamp if available
 			if (timestamp instanceof Date) {
-				point.timestamp(timestamp);
+				point.setTimestamp(timestamp);
 			} else if (typeof timestamp === "string") {
-				point.timestamp(new Date(timestamp));
+				point.setTimestamp(new Date(timestamp));
 			}
 
-			// Write to InfluxDB
-			this.writeApi.writePoint(point);
+			// Write to InfluxDB (direct async write)
+			await this.client.write(point, this.config.database);
+			logger.debug({ measurement }, "Write successful");
 			return true;
 		} catch (error) {
-			logger.error(error, "Failed to write data to InfluxDB");
+			logger.error({ error, measurement }, "Failed to write data to InfluxDB");
 			return false;
 		}
 	}
 
 	async close(): Promise<boolean> {
 		try {
-			// Close the write API only (client doesn't have a close method)
-			await this.writeApi.close();
+			// Close the client connection
+			await this.client.close();
 
-			logger.debug("InfluxDB connection resources released");
+			logger.debug("InfluxDB connection closed");
 			return true;
 		} catch (error) {
 			logger.error(error, "Error closing InfluxDB connection");
