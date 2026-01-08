@@ -6,7 +6,8 @@ WORKDIR /app
 
 # Install and enable Corepack to use pnpm
 # Note: Corepack is no longer bundled with Node.js 25+
-RUN npm install -g corepack && corepack enable
+# Use --force to overwrite existing symlinks from partial corepack removal
+RUN npm install -g corepack --force && corepack enable
 
 # Copy package manager files and tsconfig
 # Copy pnpm-workspace.yaml as it's present in the project
