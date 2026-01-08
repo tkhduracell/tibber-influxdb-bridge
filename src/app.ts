@@ -10,7 +10,6 @@ interface Config {
 	feedConnectionTimeout?: number;
 	influxUrl: string;
 	influxToken: string;
-	influxOrg: string;
 	influxBucket: string;
 	influxMeasurement: string;
 }
@@ -27,7 +26,6 @@ const config: Config = {
 	// InfluxDB configuration
 	influxUrl: process.env.INFLUXDB_URL || "http://localhost:8086",
 	influxToken: process.env.INFLUXDB_TOKEN || "",
-	influxOrg: process.env.INFLUXDB_ORG || "my-org",
 	influxBucket: process.env.INFLUXDB_BUCKET || "tibber",
 	influxMeasurement: process.env.INFLUXDB_MEASUREMENT || "live_data",
 };

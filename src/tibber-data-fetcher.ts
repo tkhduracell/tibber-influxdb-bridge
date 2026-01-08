@@ -12,7 +12,6 @@ interface TibberConfig {
 	feedConnectionTimeout?: number;
 	influxUrl: string;
 	influxToken: string;
-	influxOrg: string;
 	influxBucket: string;
 	influxMeasurement: string;
 }
