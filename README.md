@@ -33,7 +33,6 @@ Configure the application using environment variables in the `docker-compose.yml
 
 - `INFLUXDB_URL`: InfluxDB server URL (default: http://influxdb:8086)
 - `INFLUXDB_TOKEN`: InfluxDB authentication token (required)
-- `INFLUXDB_ORG`: InfluxDB organization (deprecated - not used with InfluxDB v3)
 - `INFLUXDB_BUCKET`: InfluxDB bucket/database to store data (default: tibber)
 - `INFLUXDB_MEASUREMENT`: InfluxDB mesurement to store data (default: live_data)
 
@@ -57,7 +56,6 @@ Configure the application using environment variables in the `docker-compose.yml
 
    INFLUXDB_URL=http://influx-url:8086/
    INFLUXDB_TOKEN=your-token
-   INFLUXDB_ORG=your-org
    INFLUXDB_BUCKET=your-bucket
    INFLUXDB_MEASUREMENT=your-measurment
    ```
