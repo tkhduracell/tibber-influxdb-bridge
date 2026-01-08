@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. 
 
 ## Context
-This is docker image that acts as a bridge between InfluxDB v2.7.11+ and the realtime Tibber API. 
+This is docker image that acts as a bridge between InfluxDB v3 and the realtime Tibber API. 
 
 The runtime is Node 22, use native tools when possible.
 
