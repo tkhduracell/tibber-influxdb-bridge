@@ -86,15 +86,26 @@ async function getResumeTimestamp(
 			`SELECT MAX(time) as last_time FROM "${measurement}" WHERE "accumulatedConsumptionLastHour" IS NOT NULL`,
 		);
 		if (rows.length > 0 && rows[0].last_time) {
-			const ts =
-				rows[0].last_time instanceof Date
-					? rows[0].last_time.toISOString()
-					: String(rows[0].last_time);
+			const raw = rows[0].last_time;
+			let ts: string;
+			if (raw instanceof Date) {
+				ts = raw.toISOString();
+			} else if (
+				typeof raw === "number" ||
+				(typeof raw === "string" && /^\d+$/.test(raw))
+			) {
+				ts = new Date(Number(raw)).toISOString();
+			} else {
+				ts = String(raw);
+			}
 			logger.info({ resumeFrom: ts }, "Backfill resuming from last checkpoint");
 			return ts;
 		}
 	} catch (error) {
-		logger.warn({ error }, "Could not query resume timestamp, starting fresh");
+		logger.warn(
+			{ err: error },
+			"Could not query resume timestamp, starting fresh",
+		);
 	}
 	return null;
 }
@@ -129,7 +140,7 @@ export async function startBackfill(
 		try {
 			result = await tibberQuery.execute(query);
 		} catch (error) {
-			log.error({ error }, "Backfill API request failed");
+			log.error({ err: error }, "Backfill API request failed");
 			await sleep(config.delayMs, signal);
 			continue;
 		}
