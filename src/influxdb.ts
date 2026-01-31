@@ -45,7 +45,11 @@ class InfluxDB {
 			logger.debug("Testing connection to InfluxDB...");
 
 			// Simple health check
-			const response = await fetch(`${this.config.host}/health`);
+			const response = await fetch(`${this.config.host}/health`, {
+				headers: {
+					Authorization: `Bearer ${this.config.token}`,
+				},
+			});
 
 			if (response.ok) {
 				logger.debug("Successfully connected to InfluxDB");
