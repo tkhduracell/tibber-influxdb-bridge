@@ -124,7 +124,7 @@ async function start(): Promise<void> {
 			)
 				.then(() => backfillInflux.close())
 				.catch((error) => {
-					logger.error({ error }, "Backfill failed");
+					logger.error({ err: error }, "Backfill failed");
 					backfillInflux.close();
 				});
 
