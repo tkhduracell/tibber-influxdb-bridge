@@ -45,7 +45,11 @@ class InfluxDB {
 			logger.debug("Testing connection to InfluxDB...");
 
 			// Simple health check
-			const response = await fetch(`${this.config.host}/health`);
+			const response = await fetch(`${this.config.host}/health`, {
+				headers: {
+					Authorization: `Bearer ${this.config.token}`,
+				},
+			});
 
 			if (response.ok) {
 				logger.debug("Successfully connected to InfluxDB");
@@ -115,6 +119,14 @@ class InfluxDB {
 			logger.error({ error, measurement }, "Failed to write data to InfluxDB");
 			return false;
 		}
+	}
+
+	async query(sql: string): Promise<Record<string, any>[]> {
+		const rows: Record<string, any>[] = [];
+		for await (const row of this.client.query(sql, this.config.database)) {
+			rows.push(row);
+		}
+		return rows;
 	}
 
 	async close(): Promise<boolean> {
