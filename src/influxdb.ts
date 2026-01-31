@@ -121,6 +121,14 @@ class InfluxDB {
 		}
 	}
 
+	async query(sql: string): Promise<Record<string, any>[]> {
+		const rows: Record<string, any>[] = [];
+		for await (const row of this.client.query(sql, this.config.database)) {
+			rows.push(row);
+		}
+		return rows;
+	}
+
 	async close(): Promise<boolean> {
 		try {
 			// Close the client connection
