@@ -1,5 +1,9 @@
+import { TibberQuery } from "tibber-api";
+import { startBackfill } from "./backfill";
+import InfluxDB from "./influxdb";
 import logger from "./logger";
 import TibberDataFetcher from "./tibber-data-fetcher";
+import { name, version } from "./version";
 
 // Configuration from environment variables
 interface Config {
@@ -12,6 +16,9 @@ interface Config {
 	influxToken: string;
 	influxBucket: string;
 	influxMeasurement: string;
+	backfillFromDate: string;
+	backfillPageSize: number;
+	backfillDelayMs: number;
 }
 
 const config: Config = {
@@ -28,6 +35,11 @@ const config: Config = {
 	influxToken: process.env.INFLUXDB_TOKEN || "",
 	influxBucket: process.env.INFLUXDB_BUCKET || "tibber",
 	influxMeasurement: process.env.INFLUXDB_MEASUREMENT || "live_data",
+
+	// Backfill configuration
+	backfillFromDate: process.env.BACKFILL_FROM_DATE || "",
+	backfillPageSize: Number.parseInt(process.env.BACKFILL_PAGE_SIZE || "100"),
+	backfillDelayMs: Number.parseInt(process.env.BACKFILL_DELAY_MS || "5000"),
 };
 
 // Validate required configuration
@@ -78,15 +90,64 @@ async function start(): Promise<void> {
 		// Connect to Tibber
 		await dataFetcher.connect();
 
+		// Start backfill if configured
+		const abortController = new AbortController();
+
+		if (config.backfillFromDate) {
+			const backfillInflux = new InfluxDB({
+				host: config.influxUrl,
+				token: config.influxToken,
+				database: config.influxBucket,
+			});
+			await backfillInflux.connect();
+
+			const backfillQuery = new TibberQuery({
+				apiEndpoint: {
+					queryUrl: config.queryUrl || "https://api.tibber.com/v1-beta/gql",
+					apiKey: config.accessToken,
+					userAgent: `${name}/${version}`,
+				},
+				homeId: config.homeId,
+			});
+
+			startBackfill(
+				backfillQuery,
+				backfillInflux,
+				{
+					homeId: config.homeId,
+					measurement: config.influxMeasurement,
+					fromDate: config.backfillFromDate,
+					pageSize: config.backfillPageSize,
+					delayMs: config.backfillDelayMs,
+				},
+				abortController.signal,
+			)
+				.then(() => backfillInflux.close())
+				.catch((error) => {
+					logger.error({ error }, "Backfill failed");
+					backfillInflux.close();
+				});
+
+			logger.info(
+				{
+					fromDate: config.backfillFromDate,
+					pageSize: config.backfillPageSize,
+				},
+				"Backfill started alongside live feed",
+			);
+		}
+
 		// Setup graceful shutdown
 		process.on("SIGTERM", async () => {
 			logger.info("SIGTERM received. Shutting down...");
+			abortController.abort();
 			await dataFetcher.close();
 			process.exit(0);
 		});
 
 		process.on("SIGINT", async () => {
 			logger.info("SIGINT received. Shutting down...");
+			abortController.abort();
 			await dataFetcher.close();
 			process.exit(0);
 		});

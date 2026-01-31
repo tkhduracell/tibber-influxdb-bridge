@@ -5,6 +5,7 @@ A Node.js application that fetches real-time data from the Tibber API and stores
 ## Features
 
 - Real-time energy consumption data from Tibber
+- Historical consumption data backfill from the Tibber GraphQL API
 - Automatic data storage in InfluxDB v3 time-series database
 - Dockerized for easy deployment
 - Configurable via environment variables
@@ -35,6 +36,12 @@ Configure the application using environment variables in the `docker-compose.yml
 - `INFLUXDB_TOKEN`: InfluxDB authentication token (required)
 - `INFLUXDB_BUCKET`: InfluxDB bucket/database to store data (default: tibber)
 - `INFLUXDB_MEASUREMENT`: InfluxDB mesurement to store data (default: live_data)
+
+### Historical Backfill Configuration
+
+- `BACKFILL_FROM_DATE`: ISO date to start backfilling from (e.g. `2024-01-01`). When set, the backfill runs alongside the live feed. Unset by default (backfill disabled).
+- `BACKFILL_PAGE_SIZE`: Number of hourly records per API request (default: 100)
+- `BACKFILL_DELAY_MS`: Delay in milliseconds between API calls for rate limiting (default: 5000)
 
 ### Logging Configuration
 
@@ -67,7 +74,25 @@ Configure the application using environment variables in the `docker-compose.yml
 
 ## Usage
 
-The application will automatically connect to the Tibber API and begin streaming real-time data to your InfluxDB instance. You can monitor the logs with:
+The application will automatically connect to the Tibber API and begin streaming real-time data to your InfluxDB instance.
+
+### Historical Backfill
+
+To backfill historical hourly consumption data, set the `BACKFILL_FROM_DATE` environment variable:
+
+```
+BACKFILL_FROM_DATE=2024-01-01
+```
+
+The backfill runs alongside the live feed and writes to the same InfluxDB measurement. It fetches hourly consumption data from the Tibber GraphQL API using cursor-based pagination.
+
+Key behaviors:
+- **Resume support**: On restart, the backfill queries InfluxDB for the latest backfilled timestamp and continues from there instead of starting over.
+- **Rate limiting**: Requests are spaced out by `BACKFILL_DELAY_MS` (default 5s) to stay within Tibber's API rate limits.
+- **Graceful shutdown**: Stopping the application (Ctrl+C / SIGTERM) cleanly aborts the backfill. Progress is preserved for the next run.
+- **Field mapping**: Historical `consumption` values are written as `accumulatedConsumptionLastHour` to align with the live feed. Running daily totals for `accumulatedConsumption` and `accumulatedCost` are computed automatically.
+
+You can monitor the logs with:
 
 ```bash
 docker logs -f tibber-influx-bridge
