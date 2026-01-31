@@ -138,7 +138,7 @@ export async function startBackfill(
 
 		let result: any;
 		try {
-			result = await tibberQuery.execute(query);
+			result = await tibberQuery.query(query);
 		} catch (error) {
 			log.error({ err: error }, "Backfill API request failed");
 			await sleep(config.delayMs, signal);

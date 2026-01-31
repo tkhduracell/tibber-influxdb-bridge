@@ -16,7 +16,7 @@ declare module "tibber-api" {
 
 	class TibberQuery {
 		constructor(config: TibberQueryConfig);
-		execute(query: string, variables?: Record<string, any>): Promise<any>;
+		query(query: string, variables?: Record<string, any>): Promise<any>;
 	}
 
 	class TibberFeed extends NodeJS.EventEmitter {
