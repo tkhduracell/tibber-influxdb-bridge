@@ -33,7 +33,7 @@
 		"test": "tsx --env-file=.env --test '**/*.test.{js,ts}' '**/*.spec.{js,ts}'",
 		"typecheck": "tsc --noEmit",
 		"types": "tsc --noEmit",
-		"prepare": "husky"
+		"prepare": "husky || true"
 	},
 	"keywords": ["tibber", "influxdb", "iot", "power", "energy"],
 	"author": "Filip Lindqvist",
