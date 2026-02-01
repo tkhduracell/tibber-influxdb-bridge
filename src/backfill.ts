@@ -77,37 +77,23 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 	});
 }
 
-async function getResumeTimestamp(
+async function getDayCount(
 	influxDb: InfluxDB,
 	measurement: string,
-): Promise<string | null> {
+	dayStart: string,
+	dayEnd: string,
+): Promise<number> {
 	try {
 		const rows = await influxDb.query(
-			`SELECT MAX(time) as last_time FROM "${measurement}" WHERE "accumulatedConsumptionLastHour" IS NOT NULL`,
+			`SELECT COUNT("accumulatedConsumptionLastHour") as cnt FROM "${measurement}" WHERE time >= '${dayStart}' AND time < '${dayEnd}' AND "source" = 'backfill'`,
 		);
-		if (rows.length > 0 && rows[0].last_time) {
-			const raw = rows[0].last_time;
-			let ts: string;
-			if (raw instanceof Date) {
-				ts = raw.toISOString();
-			} else if (
-				typeof raw === "number" ||
-				(typeof raw === "string" && /^\d+$/.test(raw))
-			) {
-				ts = new Date(Number(raw)).toISOString();
-			} else {
-				ts = String(raw);
-			}
-			logger.info({ resumeFrom: ts }, "Backfill resuming from last checkpoint");
-			return ts;
+		if (rows.length > 0 && rows[0].cnt != null) {
+			return Number(rows[0].cnt);
 		}
 	} catch (error) {
-		logger.warn(
-			{ err: error },
-			"Could not query resume timestamp, starting fresh",
-		);
+		logger.warn({ err: error, dayStart }, "Could not query day count");
 	}
-	return null;
+	return 0;
 }
 
 export async function startBackfill(
@@ -118,64 +104,94 @@ export async function startBackfill(
 ): Promise<void> {
 	const log = logger.child({ module: "backfill" });
 
-	const resumeTs = await getResumeTimestamp(influxDb, config.measurement);
-	let cursor = toCursor(resumeTs ?? config.fromDate);
+	const fromDate = new Date(config.fromDate);
+	fromDate.setUTCHours(0, 0, 0, 0);
+
+	const today = new Date();
+	today.setUTCHours(0, 0, 0, 0);
 
 	log.info(
 		{
 			fromDate: config.fromDate,
-			resumeFrom: resumeTs,
-			pageSize: config.pageSize,
+			toDate: today.toISOString().slice(0, 10),
 			delayMs: config.delayMs,
 		},
-		"Starting historical backfill",
+		"Starting backfill: scanning days newest-first",
 	);
 
 	let totalWritten = 0;
+	let daysChecked = 0;
+	let daysFilled = 0;
 
-	while (!signal.aborted) {
-		const query = buildQuery(config.homeId, config.pageSize, cursor);
+	const current = new Date(today);
+
+	while (current >= fromDate && !signal.aborted) {
+		const dayStr = current.toISOString().slice(0, 10);
+		const dayStart = `${dayStr}T00:00:00.000Z`;
+		const nextDay = new Date(current);
+		nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+		const dayEnd = nextDay.toISOString();
+
+		daysChecked++;
+
+		const count = await getDayCount(
+			influxDb,
+			config.measurement,
+			dayStart,
+			dayEnd,
+		);
+
+		if (count >= 24) {
+			log.debug({ day: dayStr, count }, "Day complete, skipping");
+			current.setUTCDate(current.getUTCDate() - 1);
+			continue;
+		}
+
+		log.info({ day: dayStr, existing: count }, "Backfilling day");
+
+		const cursor = toCursor(dayStart);
+		const query = buildQuery(config.homeId, 24, cursor);
 
 		let result: any;
 		try {
 			result = await tibberQuery.query(query);
 		} catch (error) {
-			log.error({ err: error }, "Backfill API request failed");
-			await sleep(config.delayMs, signal);
+			log.error(
+				{ err: error, day: dayStr },
+				"API request failed, skipping day",
+			);
+			current.setUTCDate(current.getUTCDate() - 1);
+			try {
+				await sleep(config.delayMs, signal);
+			} catch {
+				break;
+			}
 			continue;
 		}
 
 		const consumption: ConsumptionPage | undefined =
 			result?.viewer?.home?.consumption;
 
-		if (!consumption || !consumption.nodes || consumption.nodes.length === 0) {
-			log.info("Backfill complete: no more data");
-			break;
+		if (!consumption?.nodes?.length) {
+			log.debug({ day: dayStr }, "No data available for day");
+			current.setUTCDate(current.getUTCDate() - 1);
+			continue;
 		}
 
-		// Track running totals for accumulated fields
-		let currentDay: string | null = null;
 		let accumulatedConsumption = 0;
 		let accumulatedCost = 0;
 
 		for (const node of consumption.nodes) {
 			if (signal.aborted) break;
 			if (node.consumption === null) continue;
-
-			const nodeDay = node.from.slice(0, 10);
-
-			// Reset accumulators at midnight boundary
-			if (nodeDay !== currentDay) {
-				currentDay = nodeDay;
-				accumulatedConsumption = 0;
-				accumulatedCost = 0;
-			}
+			if (!node.from.startsWith(dayStr)) continue;
 
 			accumulatedConsumption += node.consumption ?? 0;
 			accumulatedCost += node.cost ?? 0;
 
 			const point: { timestamp: string; [key: string]: any } = {
 				timestamp: node.from,
+				source: "backfill",
 				accumulatedConsumptionLastHour: node.consumption,
 				accumulatedConsumption,
 				accumulatedCost,
@@ -193,21 +209,10 @@ export async function startBackfill(
 			totalWritten++;
 		}
 
-		log.info(
-			{
-				pageNodes: consumption.nodes.length,
-				totalWritten,
-				hasNextPage: consumption.pageInfo.hasNextPage,
-			},
-			"Backfill page processed",
-		);
+		daysFilled++;
+		log.info({ day: dayStr, totalWritten, daysFilled }, "Day backfilled");
 
-		if (!consumption.pageInfo.hasNextPage) {
-			log.info({ totalWritten }, "Backfill complete: all pages fetched");
-			break;
-		}
-
-		cursor = consumption.pageInfo.endCursor ?? cursor;
+		current.setUTCDate(current.getUTCDate() - 1);
 
 		try {
 			await sleep(config.delayMs, signal);
@@ -217,6 +222,8 @@ export async function startBackfill(
 	}
 
 	if (signal.aborted) {
-		log.info({ totalWritten }, "Backfill aborted");
+		log.info({ totalWritten, daysChecked, daysFilled }, "Backfill aborted");
+	} else {
+		log.info({ totalWritten, daysChecked, daysFilled }, "Backfill complete");
 	}
 }
